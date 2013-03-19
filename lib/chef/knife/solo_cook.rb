@@ -40,6 +40,15 @@ class Chef
         :long        => '--sync-only',
         :description => 'Only sync the cookbook - do not run Chef'
 
+      option :berksfile,
+        :long        => '--berksfile',
+        :description => 'Berkshelf file to use for configuration',
+        :default    => 'Berksfile'
+
+      option :berkshelf,
+        :long        => '--no-berkshelf',
+        :description => 'Skip berkshelf-chef install'
+
       option :librarian,
         :long        => '--no-librarian',
         :description => 'Skip librarian-chef install'
@@ -72,6 +81,7 @@ class Chef
 
           check_chef_version if config[:chef_check]
           generate_node_config
+          berkshelf_install if config_value(:berkshelf, true)
           librarian_install if config_value(:librarian, true)
           sync_kitchen
           generate_solorb
@@ -195,6 +205,33 @@ class Chef
 
       def librarian_env
         @librarian_env ||= Librarian::Chef::Environment.new
+      end
+
+      def berkshelf_install
+        if !File.exist?(config_value(:berksfile, 'Berksfile'))
+          Chef::Log.debug 'Berksfile found! Using Berkshelf to install cookbooks...'
+        elsif !load_berkshelf
+          ui.warn "Berkshelf could not be loaded"
+          ui.warn "Please add the berkshelf gem to your Gemfile or install it manually with `gem install berkshelf`."
+        else
+          ui.msg 'Installing Berkshelf cookbooks...'
+          Berkshelf::Berksfile.from_file(config_value(:berksfile, 'Berksfile')).install(:path => File.expand_path(berkshelf_cookbook_path))
+          add_cookbook_path berkshelf_cookbook_path
+        end
+      end
+
+      def berkshelf_cookbook_path
+        ENV.fetch('BERKSHELF_PATH', "cookbooks")
+      end
+
+      def load_berkshelf
+        begin
+          require 'berkshelf'
+        rescue LoadError
+          false
+        else
+          true
+        end
       end
 
       def generate_solorb

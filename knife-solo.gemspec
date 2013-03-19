@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler'
   s.add_development_dependency 'fog'
   s.add_development_dependency 'librarian-chef'
+  s.add_development_dependency 'berkshelf'
   s.add_development_dependency 'minitest'
   s.add_development_dependency 'mocha'
   s.add_development_dependency 'parallel'
